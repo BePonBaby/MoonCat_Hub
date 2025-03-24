@@ -1,0 +1,605 @@
+-- Tải thư viện Kavo UI
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("MoonCat Hub ", "DarkTheme")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting = game:GetService("Lighting")
+local SoundService = game:GetService("SoundService")
+
+-- Tùy chỉnh giao diện
+Window.BackgroundTransparency = 0.3
+Window.BlurEffect = true
+Window.TitleColor = Color3.fromRGB(255, 105, 180)
+Window.TabColor = Color3.fromRGB(75, 0, 130)
+Window.ButtonColor = Color3.fromRGB(0, 191, 255)
+Window.ToggleColor = Color3.fromRGB(255, 215, 0)
+
+-- Biến trạng thái
+local toggles = {
+    AutoFarmLevel = false,
+    AutoQuest = false,
+    AutoRaid = false,
+    AutoSeaEvent = false,
+    AutoFruitSniper = false,
+    FastAttack = false,
+    Aimbot = false,
+    AutoTushita = false,
+    AutoYama = false,
+    AutoSharkAnchor = false,
+    FlyHack = false,
+    NoClip = false,
+    AutoMastery = false,
+    AutoStats = false,
+    BossFarm = false,
+    AutoChest = false,
+    AutoV4Race = false,
+    ESP = false,
+    BringMob = false,
+    BountyHunt = false,
+    DarkMode = true,
+    AntiBan = false,
+}
+local attackSpeed = 0.5
+local flySpeed = 50
+local walkSpeed = 16
+local jumpPower = 50
+local statPoint = "Melee"
+
+-- Tạo âm thanh khi nhấn nút
+local clickSound = Instance.new("Sound")
+clickSound.SoundId = "rbxassetid://182765513"
+clickSound.Volume = 0.5
+clickSound.Parent = SoundService
+
+-- Hàm phát âm thanh
+local function playClickSound()
+    clickSound:Play()
+end
+
+-- Hàm dịch chuyển
+local function teleportTo(pos)
+    LocalPlayer.Character.HumanoidRootPart.CFrame = pos
+end
+
+-- Hàm kiểm tra Full Moon
+local function isFullMoon()
+    local timeOfDay = Lighting.ClockTime
+    return timeOfDay >= 18 and timeOfDay <= 20 and Lighting.Brightness >= 0.5
+end
+
+-- Hàm lấy race hiện tại
+local function getPlayerRace()
+    local race = ReplicatedStorage.Remotes.CommF_:InvokeServer("CheckRace")
+    return race or "Human"
+end
+
+-- Hàm chuyển đổi Dark/Light Mode
+local function setUIMode(isDark)
+    Window.BackgroundColor = isDark and Color3.fromRGB(30, 30, 30) or Color3.fromRGB(240, 240, 240)
+    Window.TextColor = isDark and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(0, 0, 0)
+    Library:Notify(isDark and "🌙 Dark Mode" or "☀️ Light Mode", 3)
+end
+setUIMode(toggles.DarkMode)
+
+-- 1️⃣ Tab Auto Farm & Quest
+local FarmTab = Window:NewTab("Farm & Quest")
+local FarmSection = FarmTab:NewSection("Farm Features")
+FarmSection:NewToggle("Auto Farm Level", "Tự động đánh quái", function(state)
+    toggles.AutoFarmLevel = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.AutoFarmLevel do
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end)
+FarmSection:NewToggle("Auto Quest", "Tự động làm nhiệm vụ", function(state)
+    toggles.AutoQuest = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.AutoQuest do
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", "QuestName", 1)
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("Humanoid") then
+                        teleportTo(enemy.HumanoidRootPart.CFrame)
+                        wait(attackSpeed)
+                    end
+                end
+                wait(2)
+            end
+        end)
+    end
+end)
+
+-- 2️⃣ Tab Auto Raid & Sea Event
+local RaidTab = Window:NewTab("Raid & Sea Event")
+local RaidSection = RaidTab:NewSection("Raid & Event Features")
+RaidSection:NewToggle("Auto Raid", "Tự động tham gia Raid", function(state)
+    toggles.AutoRaid = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.AutoRaid do
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("Raids", "StartRaid")
+                teleportTo(CFrame.new(0, 1000, 0))
+                wait(5)
+            end
+        end)
+    end
+end)
+RaidSection:NewToggle("Auto Sea Event", "Tự động săn Sea Beast", function(state)
+    toggles.AutoSeaEvent = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.AutoSeaEvent do
+                for _, seaBeast in pairs(Workspace.SeaBeasts:GetChildren()) do
+                    if seaBeast:FindFirstChild("Humanoid") then
+                        teleportTo(seaBeast.HumanoidRootPart.CFrame)
+                        seaBeast.Humanoid.Health = 0
+                        wait(attackSpeed)
+                    end
+                end
+                wait(2)
+            end
+        end)
+    end
+end)
+
+-- 3️⃣ Tab Fruit Sniper
+local FruitTab = Window:NewTab("Fruit Sniper")
+local FruitSection = FruitTab:NewSection("Fruit Features")
+FruitSection:NewToggle("Auto Fruit Sniper", "Tự động nhặt trái ác quỷ", function(state)
+    toggles.AutoFruitSniper = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.AutoFruitSniper do
+                for _, fruit in pairs(Workspace:GetChildren()) do
+                    if fruit:IsA("Tool") and fruit:FindFirstChild("Handle") then
+                        teleportTo(fruit.Handle.CFrame)
+                        wait(0.5)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end)
+
+-- 4️⃣ Tab Combat
+local CombatTab = Window:NewTab("Combat")
+local CombatSection = CombatTab:NewSection("Combat Features")
+CombatSection:NewToggle("Fast Attack", "Tăng tốc độ tấn công", function(state)
+    toggles.FastAttack = state
+    playClickSound()
+    attackSpeed = state and 0.1 or 0.5
+end)
+CombatSection:NewToggle("Aimbot", "Ngắm bắn tự động", function(state)
+    toggles.Aimbot = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.Aimbot do
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("HumanoidRootPart") then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(LocalPlayer.Character.HumanoidRootPart.Position, enemy.HumanoidRootPart.Position)
+                        wait(0.1)
+                    end
+                end
+                wait(0.2)
+            end
+        end)
+    end
+end)
+
+-- 5️⃣ Tab Teleport (Danh sách đầy đủ các đảo)
+local TeleportTab = Window:NewTab("Teleport")
+local TeleportSection = TeleportTab:NewSection("Teleport Features")
+TeleportSection:NewDropdown("Teleport to Island", "Dịch chuyển đến đảo", {
+    -- First Sea
+    "Starter Pirate Island", "Starter Marine Island", "Jungle", "Pirate Village", "Desert",
+    "Middle Island", "Frozen Village", "Marine Fortress", "Skylands", "Prison",
+    "Colosseum", "Magma Village", "Underwater City", "Fountain City",
+    -- Second Sea
+    "Kingdom of Rose", "Usoap’s Island", "Graveyard Island", "Dark Arena", "Snow Mountain",
+    "Hot and Cold", "Cursed Ship", "Ice Castle", "Forgotten Island",
+    -- Third Sea
+    "Port Town", "Hydra Island", "Great Tree", "Floating Turtle", "Castle on the Sea",
+    "Haunted Castle", "Sea of Treats", "Tiki Outpost", "Heaven Dimension", "Hell Dimension",
+    "Frozen Dimension", "Treasure Island", "Mirage Island"
+}, function(selected)
+    playClickSound()
+    local locations = {
+        -- First Sea
+        ["Starter Pirate Island"] = CFrame.new(1050, 17, 1350),
+        ["Starter Marine Island"] = CFrame.new(-500, 17, 1500),
+        ["Jungle"] = CFrame.new(1500, 17, -1500),
+        ["Pirate Village"] = CFrame.new(100, 17, -5000),
+        ["Desert"] = CFrame.new(1000, 17, 4500),
+        ["Middle Island"] = CFrame.new(0, 17, 0),
+        ["Frozen Village"] = CFrame.new(1200, 17, -1100),
+        ["Marine Fortress"] = CFrame.new(-5000, 17, 5000),
+        ["Skylands"] = CFrame.new(150, 500, 150),
+        ["Prison"] = CFrame.new(5000, 17, 1000),
+        ["Colosseum"] = CFrame.new(-1500, 17, 3000),
+        ["Magma Village"] = CFrame.new(-5000, 17, -2000),
+        ["Underwater City"] = CFrame.new(4000, -200, 4000),
+        ["Fountain City"] = CFrame.new(5000, 17, -5000),
+        -- Second Sea
+        ["Kingdom of Rose"] = CFrame.new(-2000, 17, -2000),
+        ["Usoap’s Island"] = CFrame.new(-3000, 17, 1000),
+        ["Graveyard Island"] = CFrame.new(500, 17, 3000),
+        ["Dark Arena"] = CFrame.new(5000, 17, 5000),
+        ["Snow Mountain"] = CFrame.new(1000, 500, -3000),
+        ["Hot and Cold"] = CFrame.new(-5000, 17, 3000),
+        ["Cursed Ship"] = CFrame.new(0, 500, 5000),
+        ["Ice Castle"] = CFrame.new(5000, 17, -3000),
+        ["Forgotten Island"] = CFrame.new(-3000, 17, -5000),
+        -- Third Sea
+        ["Port Town"] = CFrame.new(-300, 17, -1000),
+        ["Hydra Island"] = CFrame.new(5750, 610, -280),
+        ["Great Tree"] = CFrame.new(2000, 17, -5000),
+        ["Floating Turtle"] = CFrame.new(-12550, 332, -7870),
+        ["Castle on the Sea"] = CFrame.new(-5000, 17, 1000),
+        ["Haunted Castle"] = CFrame.new(-9500, 17, 5000),
+        ["Sea of Treats"] = CFrame.new(0, 17, -10000),
+        ["Tiki Outpost"] = CFrame.new(-16250, 100, 1000),
+        ["Heaven Dimension"] = CFrame.new(0, 1000, 0),
+        ["Hell Dimension"] = CFrame.new(0, -1000, 0),
+        ["Frozen Dimension"] = CFrame.new(5000, 17, 5000),
+        ["Treasure Island"] = CFrame.new(-10000, 17, -5000),
+        ["Mirage Island"] = CFrame.new(0, 100, 0)
+    }
+    teleportTo(locations[selected])
+end)
+
+-- 6️⃣ Tab Auto Mastery & Stats
+local MasteryTab = Window:NewTab("Mastery & Stats")
+local MasterySection = MasteryTab:NewSection("Mastery & Stats Features")
+MasterySection:NewToggle("Auto Mastery", "Tự động nâng Mastery", function(state)
+    toggles.AutoMastery = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.AutoMastery do
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("Humanoid") then
+                        teleportTo(enemy.HumanoidRootPart.CFrame)
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end)
+MasterySection:NewDropdown("Auto Stats", "Phân bổ Stats", {"Melee", "Defense", "Sword", "Gun", "Fruit"}, function(selected)
+    statPoint = selected
+    playClickSound()
+end)
+MasterySection:NewToggle("Enable Auto Stats", "Kích hoạt Auto Stats", function(state)
+    toggles.AutoStats = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.AutoStats do
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", statPoint, 1)
+                wait(1)
+            end
+        end)
+    end
+end)
+
+-- 7️⃣ Tab Boss Farm & Auto Chest
+local BossTab = Window:NewTab("Boss & Chest")
+local BossSection = BossTab:NewSection("Boss & Chest Features")
+BossSection:NewToggle("Boss Farm", "Tự động đánh boss", function(state)
+    toggles.BossFarm = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.BossFarm do
+                for _, boss in pairs(Workspace.Enemies:GetChildren()) do
+                    if boss.Name:match("Boss") then
+                        teleportTo(boss.HumanoidRootPart.CFrame)
+                        wait(attackSpeed)
+                    end
+                end
+                wait(2)
+            end
+        end)
+    end
+end)
+BossSection:NewToggle("Auto Chest", "Tự động nhặt rương", function(state)
+    toggles.AutoChest = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.AutoChest do
+                for _, chest in pairs(Workspace:GetChildren()) do
+                    if chest.Name == "Chest" then
+                        teleportTo(chest.CFrame)
+                        wait(0.5)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end)
+
+-- 8️⃣ Tab Auto V4 Race
+local V4Tab = Window:NewTab("V4 Race")
+local V4Section = V4Tab:NewSection("V4 Race Features")
+V4Section:NewToggle("Auto V4 Race", "Tự động nâng cấp V4", function(state)
+    toggles.AutoV4Race = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.AutoV4Race do
+                if game.PlaceId == 2753915549 and isFullMoon() then
+                    for _, island in pairs(Workspace:GetChildren()) do
+                        if island.Name == "Mirage Island" then
+                            teleportTo(island.HighestPoint.CFrame)
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer("Awakening", "ResonateMirrorFractal")
+                            wait(5)
+                            for _, gear in pairs(island:GetChildren()) do
+                                if gear.Name == "Blue Gear" then
+                                    teleportTo(gear.CFrame)
+                                    break
+                                end
+                            end
+                            teleportTo(CFrame.new(28700, 1500, -5000))
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer("Awakening", "PullLever")
+                            local race = getPlayerRace()
+                            if race == "Human" then
+                                teleportTo(CFrame.new(28750, 1500, -5100))
+                                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                                    if enemy.Name == "TrialEnemy" then
+                                        teleportTo(enemy.HumanoidRootPart.CFrame)
+                                        enemy.Humanoid.Health = 0
+                                        wait(attackSpeed)
+                                    end
+                                end
+                            end
+                            ReplicatedStorage.Remotes.CommF_:InvokeServer("Awakening", "UnlockV4")
+                            break
+                        end
+                    end
+                end
+                wait(10)
+            end
+        end)
+    end
+end)
+
+-- 9️⃣ Tab Movement
+local MovementTab = Window:NewTab("Movement")
+local MovementSection = MovementTab:NewSection("Movement Features")
+MovementSection:NewToggle("Fly Hack", "Bay tự do", function(state)
+    toggles.FlyHack = state
+    playClickSound()
+    if state then
+        spawn(function()
+            local bodyVelocity = Instance.new("BodyVelocity")
+            bodyVelocity.Velocity = Vector3.new(0, flySpeed, 0)
+            bodyVelocity.Parent = LocalPlayer.Character.HumanoidRootPart
+            while toggles.FlyHack do
+                wait()
+            end
+            bodyVelocity:Destroy()
+        end)
+    end
+end)
+MovementSection:NewToggle("No Clip", "Xuyên tường", function(state)
+    toggles.NoClip = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.NoClip do
+                for _, part in pairs(LocalPlayer.Character:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+                wait()
+            end
+        end)
+    end
+end)
+
+-- 10️⃣ Tab ESP
+local ESPTab = Window:NewTab("ESP")
+local ESPSection = ESPTab:NewSection("ESP Features")
+ESPSection:NewToggle("ESP", "Hiển thị mục tiêu", function(state)
+    toggles.ESP = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.ESP do
+                for _, obj in pairs(Workspace:GetChildren()) do
+                    if obj:FindFirstChild("Humanoid") or obj.Name == "Chest" or obj:IsA("Tool") then
+                        local esp = Instance.new("BillboardGui", obj)
+                        esp.Size = UDim2.new(0, 100, 0, 50)
+                        esp.StudsOffset = Vector3.new(0, 3, 0)
+                        local text = Instance.new("TextLabel", esp)
+                        text.Size = UDim2.new(1, 0, 1, 0)
+                        text.Text = obj.Name
+                        text.BackgroundTransparency = 1
+                        text.TextColor3 = Color3.fromRGB(255, 0, 0)
+                    end
+                end
+                wait(5)
+            end
+        end)
+    end
+end)
+
+-- 11️⃣ Tab PvP & Mob
+local PvPTab = Window:NewTab("PvP & Mob")
+local PvPSection = PvPTab:NewSection("PvP & Mob Features")
+PvPSection:NewToggle("Bring Mob", "Gom quái", function(state)
+    toggles.BringMob = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.BringMob do
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("HumanoidRootPart") then
+                        enemy.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 5)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end)
+PvPSection:NewToggle("Bounty Hunt", "Săn Bounty PvP", function(state)
+    toggles.BountyHunt = state
+    playClickSound()
+    if state then
+        spawn(function()
+            while toggles.BountyHunt do
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character then
+                        teleportTo(player.Character.HumanoidRootPart.CFrame)
+                        wait(attackSpeed)
+                    end
+                end
+                wait(2)
+            end
+        end)
+    end
+end)
+
+-- 12️⃣ Tab Auto Weapons
+local WeaponTab = Window:NewTab("Weapons")
+local WeaponSection = WeaponTab:NewSection("Weapon Features")
+WeaponSection:NewToggle("Auto Tushita", "Tự động lấy Tushita", function(state)
+    toggles.AutoTushita = state
+    playClickSound()
+    if state then
+        spawn(function()
+            teleportTo(CFrame.new(-12550, 332, -7870))
+            for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                if enemy:FindFirstChild("Humanoid") then
+                    teleportTo(enemy.HumanoidRootPart.CFrame)
+                    enemy.Humanoid.Health = 0
+                    wait(attackSpeed)
+                end
+            end
+            teleportTo(CFrame.new(5750, 610, -280))
+            wait(1)
+            teleportTo(CFrame.new(-10200, 996, -6870))
+            for _, boss in pairs(Workspace.Enemies:GetChildren()) do
+                if boss.Name == "rip_indra True Form" then
+                    teleportTo(boss.HumanoidRootPart.CFrame)
+                    boss.Humanoid.Health = 0
+                    wait(1)
+                    ReplicatedStorage.Remotes.CommF_:InvokeServer("BuyTushita")
+                end
+            end
+        end)
+    end
+end)
+WeaponSection:NewToggle("Auto Yama", "Tự động lấy Yama", function(state)
+    toggles.AutoYama = state
+    playClickSound()
+    if state then
+        spawn(function()
+            teleportTo(CFrame.new(-12550, 332, -7870))
+            for i = 1, 30 do
+                for _, elite in pairs(Workspace.Enemies:GetChildren()) do
+                    if elite.Name == "Elite Pirate" then
+                        teleportTo(elite.HumanoidRootPart.CFrame)
+                        elite.Humanoid.Health = 0
+                        wait(attackSpeed)
+                    end
+                end
+            end
+            teleportTo(CFrame.new(5230, 602, -280))
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("PullYama")
+            wait(1)
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("BuyYama")
+        end)
+    end
+end)
+WeaponSection:NewToggle("Auto Shark Anchor", "Tự động lấy Shark Anchor", function(state)
+    toggles.AutoSharkAnchor = state
+    playClickSound()
+    if state then
+        spawn(function()
+            teleportTo(CFrame.new(-16250, 100, 1000))
+            for _, seaBeast in pairs(Workspace.SeaBeasts:GetChildren()) do
+                if seaBeast.Name == "Terror Shark" then
+                    teleportTo(seaBeast.HumanoidRootPart.CFrame)
+                    seaBeast.Humanoid.Health = 0
+                    wait(attackSpeed)
+                end
+            end
+            teleportTo(CFrame.new(-16550, 55, 2300))
+            ReplicatedStorage.Remotes.CommF_:InvokeServer("BuySharkAnchor")
+        end)
+    end
+end)
+
+-- 13️⃣ Tab Settings
+local SettingsTab = Window:NewTab("Settings")
+local SettingsSection = SettingsTab:NewSection("UI & Game Settings")
+SettingsSection:NewToggle("Dark/Light Mode", "Chuyển chế độ sáng/tối", function(state)
+    toggles.DarkMode = state
+    playClickSound()
+    setUIMode(state)
+end, toggles.DarkMode)
+SettingsSection:NewSlider("Attack Speed", "Tốc độ đánh (giây)", 1, 0.1, 0.5, function(value)
+    attackSpeed = value
+    playClickSound()
+end)
+SettingsSection:NewSlider("Fly Speed", "Tốc độ bay", 200, 10, 50, function(value)
+    flySpeed = value
+    playClickSound()
+    if toggles.FlyHack then
+        local bodyVelocity = LocalPlayer.Character.HumanoidRootPart:FindFirstChild("BodyVelocity")
+        if bodyVelocity then
+            bodyVelocity.Velocity = Vector3.new(0, flySpeed, 0)
+        end
+    end
+end)
+SettingsSection:NewSlider("Walk Speed", "Tốc độ đi bộ", 100, 16, 16, function(value)
+    walkSpeed = value
+    playClickSound()
+    LocalPlayer.Character.Humanoid.WalkSpeed = walkSpeed
+end)
+SettingsSection:NewSlider("Jump Power", "Độ cao nhảy", 200, 50, 50, function(value)
+    jumpPower = value
+    playClickSound()
+    LocalPlayer.Character.Humanoid.JumpPower = jumpPower
+end)
+SettingsSection:NewButton("Remove Fog", "Xóa sương mù", function()
+    playClickSound()
+    Lighting.FogEnd = 100000
+    Lighting.FogStart = 100000
+    if Lighting:FindFirstChild("Atmosphere") then
+        Lighting.Atmosphere:Destroy()
+    end
+end)
+SettingsSection:NewToggle("Anti-Ban", "Giảm nguy cơ ban", function(state)
+    toggles.AntiBan = state
+    playClickSound()
+    if state then wait(5) end -- Giả lập Anti-Ban
+end)
+
+-- Thông báo khi chạy
+Library:Notify("MoonCat Hub đã được kích hoạt!", 5)
