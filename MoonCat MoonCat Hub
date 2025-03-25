@@ -1,10 +1,13 @@
--- MoonCat Hub (Kavo UI - Trong suốt, Ngầu, Xịn, Có BlurEffect, Viền LED Neon)
+-- MoonCat Hub (Kavo UI - Giao diện y hệt Banana Hub, Auto Farm Level 1-2600 với danh sách quái đầy đủ, Tính năng xịn, BlurEffect, Viền LED Neon, Phông chữ mềm mại, Nút toggle UI với hình chuối, Nút Dark/Light Mode, Nút Master Switch)
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Lighting = game:GetService("Lighting")
 local SoundService = game:GetService("SoundService")
+local VirtualUser = game:GetService("VirtualUser")
+local UserInputService = game:GetService("UserInputService")
+local StarterGui = game:GetService("StarterGui")
 
 -- Tải thư viện Kavo UI
 local success, Library = pcall(function()
@@ -18,41 +21,138 @@ end
 
 -- Tạo BlurEffect
 local Blur = Instance.new("BlurEffect")
-Blur.Size = 10
+Blur.Size = 12
 Blur.Parent = Lighting
 
--- Tạo giao diện Kavo UI
-local Window = Library.CreateLib("MoonCat Hub - Blox Fruits", "DarkTheme")
+-- Biến trạng thái Dark/Light Mode (mặc định là Dark Mode)
+local isDarkMode = true
 
--- Tùy chỉnh giao diện
-Window.BackgroundTransparency = 0.3
-Window.BlurEffect = true
-Window.TitleColor = Color3.fromRGB(255, 105, 180)
-Window.TabColor = Color3.fromRGB(75, 0, 130)
-Window.ButtonColor = Color3.fromRGB(0, 191, 255)
-Window.ToggleColor = Color3.fromRGB(255, 215, 0)
+-- Tạo giao diện Kavo UI (giống Banana Hub)
+local Window = Library.CreateLib("MoonCat Hub - Blox Fruits", isDarkMode and "DarkTheme" or "LightTheme")
 
--- Tạo viền LED neon (UIStroke không áp dụng trực tiếp cho Kavo UI, nhưng có thể áp dụng cho các Frame bên trong nếu cần)
--- Kavo UI không hỗ trợ UIStroke trực tiếp, nên ta sẽ tập trung vào hiệu ứng Blur và màu sắc
+-- Hàm cập nhật giao diện theo Dark/Light Mode
+local function updateTheme()
+    if isDarkMode then
+        Window.BackgroundTransparency = 0.4 -- Trong suốt
+        Window.TitleColor = Color3.fromRGB(0, 255, 255) -- Xanh cyan cho tiêu đề
+        Window.TabColor = Color3.fromRGB(50, 50, 50) -- Xám đậm cho tab
+        Window.ButtonColor = Color3.fromRGB(0, 191, 255) -- Xanh cyan cho nút
+        Window.ToggleColor = Color3.fromRGB(0, 255, 0) -- Xanh lá cho toggle
+        Window.DropdownColor = Color3.fromRGB(75, 0, 130) -- Tím đậm cho dropdown
+        Window.TextFont = Enum.Font.Gotham -- Phông chữ mềm mại, dễ đọc
+        Window.BackgroundColor = Color3.fromRGB(20, 20, 20) -- Nền tối
+    else
+        Window.BackgroundTransparency = 0.2 -- Ít trong suốt hơn
+        Window.TitleColor = Color3.fromRGB(255, 105, 180) -- Hồng phấn cho tiêu đề
+        Window.TabColor = Color3.fromRGB(200, 200, 200) -- Xám nhạt cho tab
+        Window.ButtonColor = Color3.fromRGB(255, 165, 0) -- Cam cho nút
+        Window.ToggleColor = Color3.fromRGB(255, 69, 0) -- Đỏ cam cho toggle
+        Window.DropdownColor = Color3.fromRGB(135, 206, 250) -- Xanh nhạt cho dropdown
+        Window.TextFont = Enum.Font.Gotham
+        Window.BackgroundColor = Color3.fromRGB(240, 240, 240) -- Nền sáng
+    end
+end
+
+-- Áp dụng giao diện ban đầu
+updateTheme()
+
+-- Ẩn menu mặc định ban đầu
+Window:Toggle(false)
+
+-- Tạo nút toggle UI với hình chuối
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Name = "BananaHubToggle"
+
+local ToggleButton = Instance.new("ImageButton")
+ToggleButton.Size = UDim2.new(0, 50, 0, 50)
+ToggleButton.Position = UDim2.new(0, 10, 0, 10)
+ToggleButton.BackgroundTransparency = 1
+ToggleButton.Image = "rbxassetid://99432294709083" -- Thay bằng ID hình chuối của bạn
+ToggleButton.Parent = ScreenGui
+
+-- Biến trạng thái để kiểm tra menu đang hiển thị hay ẩn
+local isMenuVisible = false
+
+-- Chức năng hiển thị/ẩn menu khi nhấn nút
+ToggleButton.MouseButton1Click:Connect(function()
+    isMenuVisible = not isMenuVisible
+    Window:Toggle(isMenuVisible)
+    playClickSound()
+end)
 
 -- Biến trạng thái
 local toggles = {
+    MasterSwitch = false, -- Thêm trạng thái cho Master Switch
     AutoFarmLevel = false,
-    AutoQuest = false,
-    AutoRaid = false,
-    AutoSeaEvent = false,
-    AutoFruitSniper = false,
-    FastAttack = false,
-    Aimbot = false,
-    AutoTushita = false,
-    AutoYama = false,
-    AutoSharkAnchor = false,
-    AutoGuitar = false,
-    AutoDragonBelt = false,
-    ESP = false,
+    AutoCollectChests = false,
+    AutoStats = false,
+    AutoFarmMasteryWeapon = false,
+    AutoFarmMasteryFightingStyle = false,
+    AutoFarmBones = false,
+    AutoFarmMaterials = false,
+    AutoFarmBosses = false,
+    AutoFarmEliteHunter = false,
+    AutoFarmSeaEvents = false,
+    AutoFarmLeviathan = false,
+    AutoFarmKitsuneShrine = false,
+    AutoFarmSeaKings = false,
+    AutoFarmFactory = false,
+    AutoFarmObservationHaki = false,
+    AutoFarmArmamentHaki = false,
+    AutoFarmAllQuests = false,
+    AutoFarmCandy = false,
+    KillAura = false,
+    AutoUseSkills = false,
+    AutoDodgeAttacks = false,
+    AutoHaki = false,
+    AutoEquipBestWeapon = false,
+    AutoFarmBounty = false,
+    AutoFarmPvPEvents = false,
+    PlayerESP = false,
+    FruitESP = false,
+    ChestESP = false,
+    EnemyESP = false,
+    BossESP = false,
+    MaterialESP = false,
+    SeaBeastESP = false,
+    AntiAFK = false,
+    AutoGetDragonRace = false,
+    AutoUpgradeRace = false,
+    AutoGetDragonTrident = false,
+    AutoGetDragonTalon = false,
+    AutoGetTushita = false,
+    AutoGetYama = false,
+    AutoGetSharkAnchor = false,
+    AutoGetCursedDualKatana = false,
+    AutoGetDarkBlade = false,
+    AutoGetHallowScythe = false,
+    AutoGetFoxLamp = false,
+    AutoGetBuddySword = false,
+    AutoTeleportSeaBeast = false,
+    AutoTeleportMirageIsland = false,
+    AutoTeleportGear = false,
+    AutoTeleportTempleOfTime = false,
+    AutoGetDragonBreath = false,
+    AutoUseDragonSkills = false,
+    AutoGetElectricClaw = false,
+    AutoGetSharkmanKarate = false,
+    AutoGetDeathStep = false,
+    AutoGetSuperhuman = false,
+    AutoGetGodhuman = false,
+    AutoGetAllAccessories = false,
+    AutoGetAllFruits = false,
+    AutoAwakenFruits = false,
+    AutoFarmRaceV4Trials = false,
+    AutoFarmDoughKing = false,
+    AutoFarmCakePrince = false,
+    AutoBuyItems = false,
+    AutoRedeemCodes = false,
 }
 local attackSpeed = 0.5
 local espInstances = {}
+local selectedStat = "Melee" -- Mặc định phân bổ điểm vào Melee
+local selectedMaterial = "Ectoplasm" -- Mặc định farm Ectoplasm
 
 -- Tạo âm thanh khi nhấn nút
 local clickSound = Instance.new("Sound")
@@ -72,10 +172,131 @@ local function teleportTo(pos)
     end
 end
 
--- Hàm kiểm tra Full Moon
-local function isFullMoon()
-    local timeOfDay = Lighting.ClockTime
-    return timeOfDay >= 18 and timeOfDay <= 20 and Lighting.Brightness >= 0.5
+-- Bảng quái đầy đủ từ level 1 đến 2600
+local farmData = {
+    -- First Sea
+    {Level = 1, Mob = "Bandit", Pos = CFrame.new(1059, 16, 1548), Quest = {"BanditQuest", 1}},
+    {Level = 10, Mob = "Monkey", Pos = CFrame.new(-1604, 37, 152), Quest = {"JungleQuest", 1}},
+    {Level = 15, Mob = "Gorilla", Pos = CFrame.new(-1324, 37, -466), Quest = {"JungleQuest", 2}},
+    {Level = 30, Mob = "Pirate", Pos = CFrame.new(-1140, 5, 3828), Quest = {"BuggyQuest1", 1}},
+    {Level = 40, Mob = "Brute", Pos = CFrame.new(-1140, 5, 3828), Quest = {"BuggyQuest1", 2}},
+    {Level = 60, Mob = "Desert Bandit", Pos = CFrame.new(897, 7, 4388), Quest = {"DesertQuest", 1}},
+    {Level = 75, Mob = "Desert Officer", Pos = CFrame.new(897, 7, 4388), Quest = {"DesertQuest", 2}},
+    {Level = 90, Mob = "Snow Bandit", Pos = CFrame.new(1384, 87, -1297), Quest = {"SnowQuest", 1}},
+    {Level = 100, Mob = "Snowman", Pos = CFrame.new(1384, 87, -1297), Quest = {"SnowQuest", 2}},
+    {Level = 120, Mob = "Chief Petty Officer", Pos = CFrame.new(-4908, 24, 4304), Quest = {"MarineQuest2", 1}},
+    {Level = 150, Mob = "Sky Bandit", Pos = CFrame.new(-4842, 717, -2623), Quest = {"SkyQuest", 1}},
+    {Level = 175, Mob = "Dark Master", Pos = CFrame.new(-4842, 717, -2623), Quest = {"SkyQuest", 2}},
+    {Level = 200, Mob = "Prisoner", Pos = CFrame.new(4875, 5, 735), Quest = {"PrisonerQuest", 1}},
+    {Level = 250, Mob = "Dangerous Prisoner", Pos = CFrame.new(4875, 5, 735), Quest = {"PrisonerQuest", 2}},
+    {Level = 300, Mob = "Toga Warrior", Pos = CFrame.new(-1576, 7, -2985), Quest = {"ColosseumQuest", 1}},
+    {Level = 325, Mob = "Gladiator", Pos = CFrame.new(-1576, 7, -2985), Quest = {"ColosseumQuest", 2}},
+    {Level = 375, Mob = "Military Soldier", Pos = CFrame.new(-5316, 12, 8517), Quest = {"MagmaQuest", 1}},
+    {Level = 400, Mob = "Military Spy", Pos = CFrame.new(-5316, 12, 8517), Quest = {"MagmaQuest", 2}},
+    {Level = 450, Mob = "Fishman Warrior", Pos = CFrame.new(61122, 18, 1569), Quest = {"FishmanQuest", 1}},
+    {Level = 475, Mob = "Fishman Commando", Pos = CFrame.new(61122, 18, 1569), Quest = {"FishmanQuest", 2}},
+    {Level = 525, Mob = "Fishman Lord", Pos = CFrame.new(61491, 18, 1412), Quest = {"FishmanQuest", 3}},
+    {Level = 550, Mob = "Shanda", Pos = CFrame.new(-7685, 5567, -497), Quest = {"SkyExp1Quest", 1}},
+    {Level = 625, Mob = "Royal Squad", Pos = CFrame.new(-7685, 5567, -497), Quest = {"SkyExp1Quest", 2}},
+    {Level = 650, Mob = "Royal Soldier", Pos = CFrame.new(-7685, 5567, -497), Quest = {"SkyExp1Quest", 3}},
+    {Level = 700, Mob = "Galley Pirate", Pos = CFrame.new(5256, 39, 4050), Quest = {"FountainQuest", 1}},
+    {Level = 725, Mob = "Galley Captain", Pos = CFrame.new(5256, 39, 4050), Quest = {"FountainQuest", 2}},
+
+    -- Second Sea
+    {Level = 750, Mob = "Raider", Pos = CFrame.new(-429, 73, 1836), Quest = {"Area1Quest", 1}},
+    {Level = 775, Mob = "Mercenary", Pos = CFrame.new(-429, 73, 1836), Quest = {"Area1Quest", 2}},
+    {Level = 800, Mob = "Swan Pirate", Pos = CFrame.new(970, 142, 1237), Quest = {"Area2Quest", 1}},
+    {Level = 850, Mob = "Factory Staff", Pos = CFrame.new(632, 73, 290), Quest = {"Area2Quest", 2}},
+    {Level = 875, Mob = "Marine Lieutenant", Pos = CFrame.new(-2440, 73, -3210), Quest = {"MarineQuest3", 1}},
+    {Level = 900, Mob = "Marine Captain", Pos = CFrame.new(-2440, 73, -3210), Quest = {"MarineQuest3", 2}},
+    {Level = 925, Mob = "Zombie", Pos = CFrame.new(-5477, 48, -788), Quest = {"ZombieQuest", 1}},
+    {Level = 950, Mob = "Vampire", Pos = CFrame.new(-5477, 48, -788), Quest = {"ZombieQuest", 2}},
+    {Level = 975, Mob = "Snow Trooper", Pos = CFrame.new(605, 401, -5371), Quest = {"SnowMountainQuest", 1}},
+    {Level = 1000, Mob = "Winter Warrior", Pos = CFrame.new(605, 401, -5371), Quest = {"SnowMountainQuest", 2}},
+    {Level = 1050, Mob = "Lab Subordinate", Pos = CFrame.new(-3059, 73, -8961), Quest = {"IceSideQuest", 1}},
+    {Level = 1100, Mob = "Horned Warrior", Pos = CFrame.new(-3059, 73, -8961), Quest = {"IceSideQuest", 2}},
+    {Level = 1125, Mob = "Magma Ninja", Pos = CFrame.new(-5428, 16, -5299), Quest = {"FireSideQuest", 1}},
+    {Level = 1175, Mob = "Lava Pirate", Pos = CFrame.new(-5428, 16, -5299), Quest = {"FireSideQuest", 2}},
+    {Level = 1200, Mob = "Ship Deckhand", Pos = CFrame.new(1038, 125, 32911), Quest = {"ShipQuest1", 1}},
+    {Level = 1250, Mob = "Ship Engineer", Pos = CFrame.new(1038, 125, 32911), Quest = {"ShipQuest1", 2}},
+    {Level = 1275, Mob = "Ship Steward", Pos = CFrame.new(968, 125, 33245), Quest = {"ShipQuest2", 1}},
+    {Level = 1300, Mob = "Ship Officer", Pos = CFrame.new(968, 125, 33245), Quest = {"ShipQuest2", 2}},
+    {Level = 1325, Mob = "Arctic Warrior", Pos = CFrame.new(5667, 28, -6482), Quest = {"FrostQuest", 1}},
+    {Level = 1350, Mob = "Snow Lurker", Pos = CFrame.new(5667, 28, -6482), Quest = {"FrostQuest", 2}},
+    {Level = 1375, Mob = "Sea Soldier", Pos = CFrame.new(-3054, 29, -9756), Quest = {"ForgottenQuest", 1}},
+    {Level = 1425, Mob = "Tide Keeper", Pos = CFrame.new(-3054, 29, -9756), Quest = {"ForgottenQuest", 2}},
+
+    -- Third Sea
+    {Level = 1500, Mob = "Pirate Millionaire", Pos = CFrame.new(-290, 43, 5580), Quest = {"PiratePortQuest", 1}},
+    {Level = 1525, Mob = "Pistol Billionaire", Pos = CFrame.new(-290, 43, 5580), Quest = {"PiratePortQuest", 2}},
+    {Level = 1550, Mob = "Dragon Crew Warrior", Pos = CFrame.new(6339, 52, -1213), Quest = {"AmazonQuest", 1}},
+    {Level = 1575, Mob = "Dragon Crew Archer", Pos = CFrame.new(6339, 52, -1213), Quest = {"AmazonQuest", 2}},
+    {Level = 1600, Mob = "Female Islander", Pos = CFrame.new(5448, 602, 751), Quest = {"AmazonQuest2", 1}},
+    {Level = 1625, Mob = "Giant Islander", Pos = CFrame.new(5448, 602, 751), Quest = {"AmazonQuest2", 2}},
+    {Level = 1650, Mob = "Marine Commodore", Pos = CFrame.new(2180, 29, -6737), Quest = {"MarineTreeIsland", 1}},
+    {Level = 1700, Mob = "Marine Rear Admiral", Pos = CFrame.new(2180, 29, -6737), Quest = {"MarineTreeIsland", 2}},
+    {Level = 1725, Mob = "Fishman Raider", Pos = CFrame.new(-10581, 331, -8758), Quest = {"DeepForestIsland3", 1}},
+    {Level = 1750, Mob = "Fishman Captain", Pos = CFrame.new(-10581, 331, -8758), Quest = {"DeepForestIsland3", 2}},
+    {Level = 1775, Mob = "Forest Pirate", Pos = CFrame.new(-13234, 332, -7627), Quest = {"DeepForestIsland", 1}},
+    {Level = 1825, Mob = "Mythological Pirate", Pos = CFrame.new(-13234, 332, -7627), Quest = {"DeepForestIsland", 2}},
+    {Level = 1850, Mob = "Jungle Pirate", Pos = CFrame.new(-11993, 332, -8840), Quest = {"DeepForestIsland2", 1}},
+    {Level = 1900, Mob = "Musketeer Pirate", Pos = CFrame.new(-11993, 332, -8840), Quest = {"DeepForestIsland2", 2}},
+    {Level = 1925, Mob = "Reborn Skeleton", Pos = CFrame.new(-9479, 142, 5566), Quest = {"HauntedQuest1", 1}},
+    {Level = 1975, Mob = "Living Zombie", Pos = CFrame.new(-9479, 142, 5566), Quest = {"HauntedQuest1", 2}},
+    {Level = 2000, Mob = "Demonic Soul", Pos = CFrame.new(-9516, 172, 6078), Quest = {"HauntedQuest2", 1}},
+    {Level = 2025, Mob = "Posessed Mummy", Pos = CFrame.new(-9516, 172, 6078), Quest = {"HauntedQuest2", 2}},
+    {Level = 2050, Mob = "Peanut Scout", Pos = CFrame.new(-2064, 50, -10232), Quest = {"PeanutQuest1", 1}},
+    {Level = 2075, Mob = "Peanut President", Pos = CFrame.new(-2064, 50, -10232), Quest = {"PeanutQuest1", 2}},
+    {Level = 2100, Mob = "Ice Cream Chef", Pos = CFrame.new(-820, 66, -10966), Quest = {"IceCreamIslandQuest", 1}},
+    {Level = 2125, Mob = "Ice Cream Commander", Pos = CFrame.new(-820, 66, -10966), Quest = {"IceCreamIslandQuest", 2}},
+    {Level = 2150, Mob = "Cookie Crafter", Pos = CFrame.new(-2021, 38, -12028), Quest = {"CakeQuest1", 1}},
+    {Level = 2200, Mob = "Cake Guard", Pos = CFrame.new(-2021, 38, -12028), Quest = {"CakeQuest1", 2}},
+    {Level = 2225, Mob = "Baking Staff", Pos = CFrame.new(-1927, 38, -12848), Quest = {"CakeQuest2", 1}},
+    {Level = 2250, Mob = "Head Baker", Pos = CFrame.new(-1927, 38, -12848), Quest = {"CakeQuest2", 2}},
+    {Level = 2275, Mob = "Cocoa Warrior", Pos = CFrame.new(231, 25, -12194), Quest = {"ChocQuest1", 1}},
+    {Level = 2300, Mob = "Chocolate Bar Battler", Pos = CFrame.new(231, 25, -12194), Quest = {"ChocQuest1", 2}},
+    {Level = 2325, Mob = "Sweet Thief", Pos = CFrame.new(149, 25, -12699), Quest = {"ChocQuest2", 1}},
+    {Level = 2350, Mob = "Candy Rebel", Pos = CFrame.new(149, 25, -12699), Quest = {"ChocQuest2", 2}},
+    {Level = 2375, Mob = "Candy Pirate", Pos = CFrame.new(-1150, 16, -14445), Quest = {"CandyQuest1", 1}},
+    {Level = 2400, Mob = "Snow Demon", Pos = CFrame.new(-1150, 16, -14445), Quest = {"CandyQuest1", 2}},
+    {Level = 2425, Mob = "Isle Outlaw", Pos = CFrame.new(-16548, 84, -155), Quest = {"TikiQuest1", 1}},
+    {Level = 2450, Mob = "Island Boy", Pos = CFrame.new(-16548, 84, -155), Quest = {"TikiQuest1", 2}},
+    {Level = 2475, Mob = "Sun-kissed Warrior", Pos = CFrame.new(-16540, 84, 1049), Quest = {"TikiQuest2", 1}},
+    {Level = 2500, Mob = "Isle Champion", Pos = CFrame.new(-16540, 84, 1049), Quest = {"TikiQuest2", 2}},
+}
+
+-- Bảng boss
+local bossData = {
+    {Name = "Ice Admiral", Pos = CFrame.new(-5000, 17, 5000)},
+    {Name = "Magma Admiral", Pos = CFrame.new(-5000, 17, -2000)},
+    {Name = "Tide Keeper", Pos = CFrame.new(-3054, 29, -9756)},
+    {Name = "Soul Reaper", Pos = CFrame.new(-9516, 172, 6078)},
+    {Name = "Dough King", Pos = CFrame.new(-2021, 38, -12028)},
+    {Name = "Cake Prince", Pos = CFrame.new(-2021, 38, -12028)},
+}
+
+-- Bảng nguyên liệu
+local materialData = {
+    {Name = "Ectoplasm", Mob = "Ship Deckhand", Pos = CFrame.new(1038, 125, 32911)},
+    {Name = "Fish Tail", Mob = "Fishman Warrior", Pos = CFrame.new(61122, 18, 1569)},
+    {Name = "Magma Ore", Mob = "Magma Ninja", Pos = CFrame.new(-5428, 16, -5299)},
+    {Name = "Cocoa", Mob = "Cocoa Warrior", Pos = CFrame.new(231, 25, -12194)},
+}
+
+-- Hàm lấy level người chơi
+local function getPlayerLevel()
+    local level = LocalPlayer.Data.Level.Value
+    return level
+end
+
+-- Hàm tìm quái phù hợp với level
+local function getMobForLevel(level)
+    for i = #farmData, 1, -1 do
+        if level >= farmData[i].Level then
+            return farmData[i]
+        end
+    end
+    return farmData[1] -- Mặc định là quái đầu tiên nếu không tìm thấy
 end
 
 -- Hàm dọn dẹp ESP
@@ -88,387 +309,1227 @@ local function clearESP()
     espInstances = {}
 end
 
--- 1️⃣ Tab Auto Farm & Quest
-local FarmTab = Window:NewTab("Farm & Quest")
-local FarmSection = FarmTab:NewSection("Farm Features")
-FarmSection:NewToggle("Auto Farm Level", "Tự động đánh quái", function(state)
+-- Hàm bật/tắt tất cả các chức năng
+local function toggleAllFunctions(state)
+    toggles.MasterSwitch = state
+    for key, _ in pairs(toggles) do
+        if key ~= "MasterSwitch" then -- Bỏ qua chính MasterSwitch
+            toggles[key] = state
+        end
+    end
+    Library:Notify("All functions have been " .. (state and "enabled" or "disabled") .. "!", 3)
+end
+
+-- Hàm Auto Farm
+local function autoFarm(state)
     toggles.AutoFarmLevel = state
-    playClickSound()
     if state then
         spawn(function()
-            while toggles.AutoFarmLevel and LocalPlayer.Character do
-                if next(Workspace.Enemies:GetChildren()) then
-                    for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
-                        if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                            teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
-                            wait(attackSpeed)
-                        end
+            while toggles.AutoFarmLevel and toggles.MasterSwitch and LocalPlayer.Character do
+                local playerLevel = getPlayerLevel()
+                local mobData = getMobForLevel(playerLevel)
+
+                -- Dịch chuyển đến vị trí quái
+                teleportTo(mobData.Pos)
+
+                -- Lấy quest nếu có
+                if mobData.Quest then
+                    ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", mobData.Quest[1], mobData.Quest[2])
+                end
+
+                -- Tìm và đánh quái
+                local foundMob = false
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == mobData.Mob and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        foundMob = true
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
                     end
-                else
-                    Library:Notify("Không tìm thấy quái để farm!", 3)
+                end
+
+                if not foundMob then
+                    Library:Notify("Không tìm thấy " .. mobData.Mob .. " để farm!", 3)
                     wait(2)
                 end
                 wait(1)
             end
         end)
     end
-end)
+end
 
-FarmSection:NewToggle("Auto Quest", "Tự động làm nhiệm vụ", function(state)
-    toggles.AutoQuest = state
-    playClickSound()
+-- Hàm Auto Collect Chests
+local function autoCollectChests(state)
+    toggles.AutoCollectChests = state
     if state then
         spawn(function()
-            while toggles.AutoQuest and LocalPlayer.Character do
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", "BartiloQuest1", 1)
-                if next(Workspace.Enemies:GetChildren()) then
-                    for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
-                        if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                            teleportTo(enemy.HumanoidRootPart.CFrame)
-                            wait(attackSpeed)
-                        end
+            while toggles.AutoCollectChests and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, chest in pairs(Workspace:GetChildren()) do
+                    if chest.Name:match("Chest") and chest:IsA("BasePart") then
+                        teleportTo(chest.CFrame)
+                        wait(0.5)
                     end
                 end
-                wait(2)
-            end
-        end)
-    end
-end)
-
--- 2️⃣ Tab Auto Raid & Sea Event
-local RaidTab = Window:NewTab("Raid & Sea Event")
-local RaidSection = RaidTab:NewSection("Raid & Event Features")
-RaidSection:NewToggle("Auto Raid", "Tự động tham gia Raid", function(state)
-    toggles.AutoRaid = state
-    playClickSound()
-    if state then
-        spawn(function()
-            while toggles.AutoRaid and LocalPlayer.Character do
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("Raids", "StartRaid")
-                teleportTo(CFrame.new(0, 1000, 0))
                 wait(5)
             end
         end)
     end
-end)
+end
 
-RaidSection:NewToggle("Auto Sea Event", "Tự động săn Sea Beast", function(state)
-    toggles.AutoSeaEvent = state
-    playClickSound()
+-- Hàm Auto Stats
+local function autoStats(state)
+    toggles.AutoStats = state
     if state then
         spawn(function()
-            while toggles.AutoSeaEvent and LocalPlayer.Character do
-                if next(Workspace.SeaBeasts:GetChildren()) then
-                    for _, seaBeast in pairs(Workspace.SeaBeasts:GetChildren()) do
-                        if seaBeast:FindFirstChild("Humanoid") and seaBeast.Humanoid.Health > 0 then
-                            teleportTo(seaBeast.HumanoidRootPart.CFrame)
-                            wait(attackSpeed)
-                        end
-                    end
+            while toggles.AutoStats and toggles.MasterSwitch and LocalPlayer.Character do
+                local points = LocalPlayer.Data.StatPoints.Value
+                if points > 0 then
+                    ReplicatedStorage.Remotes.CommF_:InvokeServer("AddPoint", selectedStat, points)
                 end
-                wait(2)
+                wait(1)
             end
         end)
     end
-end)
+end
 
--- 3️⃣ Tab Fruit Sniper
-local FruitTab = Window:NewTab("Fruit Sniper")
-local FruitSection = FruitTab:NewSection("Fruit Features")
-FruitSection:NewToggle("Auto Fruit Sniper", "Tự động nhặt trái ác quỷ", function(state)
-    toggles.AutoFruitSniper = state
-    playClickSound()
+-- Hàm Auto Farm Mastery (Súng và Kiếm)
+local function autoFarmMasteryWeapon(state)
+    toggles.AutoFarmMasteryWeapon = state
     if state then
         spawn(function()
-            while toggles.AutoFruitSniper and LocalPlayer.Character do
-                for _, fruit in pairs(Workspace:GetChildren()) do
-                    if fruit:IsA("Tool") and fruit:FindFirstChild("Handle") and fruit.Name:match("Fruit") then
-                        teleportTo(fruit.Handle.CFrame)
-                        wait(0.5)
+            while toggles.AutoFarmMasteryWeapon and toggles.MasterSwitch and LocalPlayer.Character do
+                local playerLevel = getPlayerLevel()
+                local mobData = getMobForLevel(playerLevel)
+                teleportTo(mobData.Pos)
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == mobData.Mob and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
                     end
                 end
                 wait(1)
             end
         end)
     end
-end)
+end
 
--- 4️⃣ Tab Combat
-local CombatTab = Window:NewTab("Combat")
-local CombatSection = CombatTab:NewSection("Combat Features")
-CombatSection:NewToggle("Fast Attack", "Tăng tốc độ tấn công", function(state)
-    toggles.FastAttack = state
-    playClickSound()
-    attackSpeed = state and 0.2 or 0.5
-end)
-
-CombatSection:NewToggle("Aimbot", "Ngắm bắn tự động", function(state)
-    toggles.Aimbot = state
-    playClickSound()
+-- Hàm Auto Farm Mastery (Võ - Fighting Styles)
+local function autoFarmMasteryFightingStyle(state)
+    toggles.AutoFarmMasteryFightingStyle = state
     if state then
         spawn(function()
-            while toggles.Aimbot and LocalPlayer.Character do
+            while toggles.AutoFarmMasteryFightingStyle and toggles.MasterSwitch and LocalPlayer.Character do
+                local playerLevel = getPlayerLevel()
+                local mobData = getMobForLevel(playerLevel)
+                teleportTo(mobData.Pos)
                 for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
-                    if enemy:FindFirstChild("HumanoidRootPart") then
-                        local distance = (enemy.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-                        if distance < 50 then
-                            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(LocalPlayer.Character.HumanoidRootPart.Position, enemy.HumanoidRootPart.Position)
+                    if enemy.Name == mobData.Mob and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Bones
+local function autoFarmBones(state)
+    toggles.AutoFarmBones = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmBones and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-9479, 142, 5566)) -- Haunted Castle
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if (enemy.Name == "Reborn Skeleton" or enemy.Name == "Living Zombie" or enemy.Name == "Demonic Soul" or enemy.Name == "Posessed Mummy") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Materials (bao gồm Cocoa)
+local function autoFarmMaterials(state)
+    toggles.AutoFarmMaterials = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmMaterials and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, material in pairs(materialData) do
+                    if material.Name == selectedMaterial then
+                        teleportTo(material.Pos)
+                        for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                            if enemy.Name == material.Mob and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                                teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                                wait(attackSpeed)
+                            end
                         end
-                        wait(0.2)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Bosses
+local function autoFarmBosses(state)
+    toggles.AutoFarmBosses = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmBosses and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, boss in pairs(bossData) do
+                    teleportTo(boss.Pos)
+                    for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                        if enemy.Name == boss.Name and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                            teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                            wait(attackSpeed)
+                        end
+                    end
+                    wait(5)
+                end
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Elite Hunter
+local function autoFarmEliteHunter(state)
+    toggles.AutoFarmEliteHunter = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmEliteHunter and toggles.MasterSwitch and LocalPlayer.Character do
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("EliteHunter")
+                wait(5)
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name:match("Elite") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Sea Events
+local function autoFarmSeaEvents(state)
+    toggles.AutoFarmSeaEvents = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmSeaEvents and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, seaEvent in pairs(Workspace.SeaBeasts:GetChildren()) do
+                    if seaEvent:FindFirstChild("Humanoid") and seaEvent.Humanoid.Health > 0 then
+                        teleportTo(seaEvent.HumanoidRootPart.CFrame * CFrame.new(0, 50, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Leviathan
+local function autoFarmLeviathan(state)
+    toggles.AutoFarmLeviathan = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmLeviathan and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, leviathan in pairs(Workspace.SeaBeasts:GetChildren()) do
+                    if leviathan.Name == "Leviathan" and leviathan:FindFirstChild("Humanoid") and leviathan.Humanoid.Health > 0 then
+                        teleportTo(leviathan.HumanoidRootPart.CFrame * CFrame.new(0, 50, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Kitsune Shrine
+local function autoFarmKitsuneShrine(state)
+    toggles.AutoFarmKitsuneShrine = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmKitsuneShrine and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-9500, 100, 5000)) -- Kitsune Shrine
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("KitsuneEvent", "Check")
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Sea Kings
+local function autoFarmSeaKings(state)
+    toggles.AutoFarmSeaKings = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmSeaKings and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, seaKing in pairs(Workspace.SeaBeasts:GetChildren()) do
+                    if seaKing.Name == "Sea King" and seaKing:FindFirstChild("Humanoid") and seaKing.Humanoid.Health > 0 then
+                        teleportTo(seaKing.HumanoidRootPart.CFrame * CFrame.new(0, 50, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Factory
+local function autoFarmFactory(state)
+    toggles.AutoFarmFactory = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmFactory and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(632, 73, 290)) -- Factory
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Factory Staff" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Observation Haki
+local function autoFarmObservationHaki(state)
+    toggles.AutoFarmObservationHaki = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmObservationHaki and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-7685, 5567, -497)) -- Skylands
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Royal Soldier" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Armament Haki
+local function autoFarmArmamentHaki(state)
+    toggles.AutoFarmArmamentHaki = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmArmamentHaki and toggles.MasterSwitch and LocalPlayer.Character do
+                local playerLevel = getPlayerLevel()
+                local mobData = getMobForLevel(playerLevel)
+                teleportTo(mobData.Pos)
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == mobData.Mob and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm All Quests
+local function autoFarmAllQuests(state)
+    toggles.AutoFarmAllQuests = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmAllQuests and toggles.MasterSwitch and LocalPlayer.Character do
+                local playerLevel = getPlayerLevel()
+                local mobData = getMobForLevel(playerLevel)
+                if mobData.Quest then
+                    ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", mobData.Quest[1], mobData.Quest[2])
+                    teleportTo(mobData.Pos)
+                    for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                        if enemy.Name == mobData.Mob and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                            teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                            wait(attackSpeed)
+                        end
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Candy
+local function autoFarmCandy(state)
+    toggles.AutoFarmCandy = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmCandy and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-1150, 16, -14445)) -- Sea of Treats
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if (enemy.Name == "Candy Pirate" or enemy.Name == "Snow Demon") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Kill Aura
+local function killAura(state)
+    toggles.KillAura = state
+    if state then
+        spawn(function()
+            while toggles.KillAura and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        local distance = (enemy.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                        if distance < 15 then
+                            teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                            wait(attackSpeed)
+                        end
                     end
                 end
                 wait(0.5)
             end
         end)
     end
-end)
+end
 
--- 5️⃣ Tab Teleport
-local TeleportTab = Window:NewTab("Teleport")
-local TeleportSection = TeleportTab:NewSection("Teleport Features")
-TeleportSection:NewDropdown("Teleport to Island", "Dịch chuyển đến đảo", {
-    "Starter Pirate Island", "Starter Marine Island", "Jungle", "Pirate Village", "Desert",
-    "Middle Island", "Frozen Village", "Marine Fortress", "Skylands", "Prison",
-    "Colosseum", "Magma Village", "Underwater City", "Fountain City",
-    "Kingdom of Rose", "Usoap’s Island", "Graveyard Island", "Dark Arena", "Snow Mountain",
-    "Hot and Cold", "Cursed Ship", "Ice Castle", "Forgotten Island",
-    "Port Town", "Hydra Island", "Great Tree", "Floating Turtle", "Castle on the Sea",
-    "Haunted Castle", "Sea of Treats", "Tiki Outpost", "Heaven Dimension", "Hell Dimension",
-    "Frozen Dimension", "Treasure Island", "Mirage Island"
-}, function(selected)
-    playClickSound()
-    local locations = {
-        ["Starter Pirate Island"] = CFrame.new(1050, 17, 1350),
-        ["Starter Marine Island"] = CFrame.new(-500, 17, 1500),
-        ["Jungle"] = CFrame.new(1500, 17, -1500),
-        ["Pirate Village"] = CFrame.new(100, 17, -5000),
-        ["Desert"] = CFrame.new(1000, 17, 4500),
-        ["Middle Island"] = CFrame.new(0, 17, 0),
-        ["Frozen Village"] = CFrame.new(1200, 17, -1100),
-        ["Marine Fortress"] = CFrame.new(-5000, 17, 5000),
-        ["Skylands"] = CFrame.new(150, 500, 150),
-        ["Prison"] = CFrame.new(5000, 17, 1000),
-        ["Colosseum"] = CFrame.new(-1500, 17, 3000),
-        ["Magma Village"] = CFrame.new(-5000, 17, -2000),
-        ["Underwater City"] = CFrame.new(4000, -200, 4000),
-        ["Fountain City"] = CFrame.new(5000, 17, -5000),
-        ["Kingdom of Rose"] = CFrame.new(-2000, 17, -2000),
-        ["Usoap’s Island"] = CFrame.new(-3000, 17, 1000),
-        ["Graveyard Island"] = CFrame.new(500, 17, 3000),
-        ["Dark Arena"] = CFrame.new(5000, 17, 5000),
-        ["Snow Mountain"] = CFrame.new(1000, 500, -3000),
-        ["Hot and Cold"] = CFrame.new(-5000, 17, 3000),
-        ["Cursed Ship"] = CFrame.new(0, 500, 5000),
-        ["Ice Castle"] = CFrame.new(5000, 17, -3000),
-        ["Forgotten Island"] = CFrame.new(-3000, 17, -5000),
-        ["Port Town"] = CFrame.new(-300, 17, -1000),
-        ["Hydra Island"] = CFrame.new(5750, 610, -280),
-        ["Great Tree"] = CFrame.new(2000, 17, -5000),
-        ["Floating Turtle"] = CFrame.new(-12550, 332, -7870),
-        ["Castle on the Sea"] = CFrame.new(-5000, 17, 1000),
-        ["Haunted Castle"] = CFrame.new(-9500, 17, 5000),
-        ["Sea of Treats"] = CFrame.new(0, 17, -10000),
-        ["Tiki Outpost"] = CFrame.new(-16250, 100, 1000),
-        ["Heaven Dimension"] = CFrame.new(0, 1000, 0),
-        ["Hell Dimension"] = CFrame.new(0, -1000, 0),
-        ["Frozen Dimension"] = CFrame.new(5000, 17, 5000),
-        ["Treasure Island"] = CFrame.new(-10000, 17, -5000),
-        ["Mirage Island"] = CFrame.new(0, 100, 0)
-    }
-    teleportTo(locations[selected])
-end)
-
--- 6️⃣ Tab Auto Weapons
-local WeaponTab = Window:NewTab("Weapons")
-local WeaponSection = WeaponTab:NewSection("Weapon Features")
-WeaponSection:NewToggle("Auto Tushita", "Tự động lấy Tushita", function(state)
-    toggles.AutoTushita = state
-    playClickSound()
+-- Hàm Auto Use Skills
+local function autoUseSkills(state)
+    toggles.AutoUseSkills = state
     if state then
         spawn(function()
-            while toggles.AutoTushita and LocalPlayer.Character do
-                teleportTo(CFrame.new(-12550, 332, -7870))
-                if next(Workspace.Enemies:GetChildren()) then
-                    for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
-                        if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                            teleportTo(enemy.HumanoidRootPart.CFrame)
-                            wait(attackSpeed)
+            while toggles.AutoUseSkills and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        local distance = (enemy.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                        if distance < 15 then
+                            VirtualUser:Button1Down(Vector2.new(0, 0), game:GetService("UserInputService"):GetMouseLocation())
+                            wait(0.1)
+                            VirtualUser:Button1Up(Vector2.new(0, 0), game:GetService("UserInputService"):GetMouseLocation())
                         end
                     end
                 end
-                teleportTo(CFrame.new(5750, 610, -280))
                 wait(1)
-                teleportTo(CFrame.new(-10200, 996, -6870))
-                if next(Workspace.Enemies:GetChildren()) then
-                    for _, boss in pairs(Workspace.Enemies:GetChildren()) do
-                        if boss.Name == "rip_indra True Form" and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 then
-                            teleportTo(boss.HumanoidRootPart.CFrame)
-                            wait(attackSpeed)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Dodge Attacks
+local function autoDodgeAttacks(state)
+    toggles.AutoDodgeAttacks = state
+    if state then
+        spawn(function()
+            while toggles.AutoDodgeAttacks and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        local distance = (enemy.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                        if distance < 10 then
+                            teleportTo(LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 20))
                         end
                     end
                 end
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("YamaQuest", "BuyTushita")
+                wait(0.5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Haki
+local function autoHaki(state)
+    toggles.AutoHaki = state
+    if state then
+        spawn(function()
+            while toggles.AutoHaki and toggles.MasterSwitch and LocalPlayer.Character do
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("KenTalk", "Start")
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("BusoshokuHaki", "Start")
                 wait(5)
             end
         end)
     end
-end)
+end
 
-WeaponSection:NewToggle("Auto Yama", "Tự động lấy Yama", function(state)
-    toggles.AutoYama = state
-    playClickSound()
+-- Hàm Auto Equip Best Weapon
+local function autoEquipBestWeapon(state)
+    toggles.AutoEquipBestWeapon = state
     if state then
         spawn(function()
-            while toggles.AutoYama and LocalPlayer.Character do
-                teleportTo(CFrame.new(-12550, 332, -7870))
-                local eliteCount = 0
-                while eliteCount < 30 and toggles.AutoYama do
-                    if next(Workspace.Enemies:GetChildren()) then
-                        for _, elite in pairs(Workspace.Enemies:GetChildren()) do
-                            if elite.Name == "Elite Pirate" and elite:FindFirstChild("Humanoid") and elite.Humanoid.Health > 0 then
-                                teleportTo(elite.HumanoidRootPart.CFrame)
-                                wait(attackSpeed)
-                                eliteCount = eliteCount + 1
-                            end
-                        end
+            while toggles.AutoEquipBestWeapon and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, tool in pairs(LocalPlayer.Backpack:GetChildren()) do
+                    if tool:IsA("Tool") and tool:FindFirstChild("Damage") then
+                        LocalPlayer.Character.Humanoid:EquipTool(tool)
+                        break
                     end
-                    wait(1)
                 end
-                teleportTo(CFrame.new(5230, 602, -280))
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("EliteHunter", "PullYama")
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Farm Bounty/Honor
+local function autoFarmBounty(state)
+    toggles.AutoFarmBounty = state
+    if state then
+        spawn(function()
+            while toggles.AutoFarmBounty and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        teleportTo(player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
                 wait(1)
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("YamaQuest", "BuyYama")
-                wait(5)
             end
         end)
     end
-end)
+end
 
-WeaponSection:NewToggle("Auto Shark Anchor", "Tự động lấy Shark Anchor", function(state)
-    toggles.AutoSharkAnchor = state
-    playClickSound()
+-- Hàm Auto Farm PvP Events
+local function autoFarmPvPEvents(state)
+    toggles.AutoFarmPvPEvents = state
     if state then
         spawn(function()
-            while toggles.AutoSharkAnchor and LocalPlayer.Character do
-                teleportTo(CFrame.new(-16250, 100, 1000))
-                if next(Workspace.SeaBeasts:GetChildren()) then
-                    for _, seaBeast in pairs(Workspace.SeaBeasts:GetChildren()) do
-                        if seaBeast.Name == "Terror Shark" and seaBeast:FindFirstChild("Humanoid") and seaBeast.Humanoid.Health > 0 then
-                            teleportTo(seaBeast.HumanoidRootPart.CFrame)
-                            wait(attackSpeed)
+            while toggles.AutoFarmPvPEvents and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        teleportTo(player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Player ESP
+local function playerESP(state)
+    toggles.PlayerESP = state
+    if state then
+        spawn(function()
+            while toggles.PlayerESP and toggles.MasterSwitch do
+                for _, player in pairs(Players:GetPlayers()) do
+                    if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                        if not player.Character:FindFirstChild("PlayerESP") then
+                            local esp = Instance.new("BillboardGui")
+                            esp.Name = "PlayerESP"
+                            esp.Size = UDim2.new(0, 100, 0, 50)
+                            esp.StudsOffset = Vector3.new(0, 3, 0)
+                            esp.Adornee = player.Character.HumanoidRootPart
+                            esp.Parent = player.Character
+
+                            local text = Instance.new("TextLabel")
+                            text.Size = UDim2.new(1, 0, 1, 0)
+                            text.BackgroundTransparency = 1
+                            text.TextColor3 = Color3.fromRGB(0, 255, 0)
+                            text.TextSize = 14
+                            text.Font = Enum.Font.Gotham
+                            text.Text = player.Name .. " (" .. math.floor((player.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude) .. " studs)"
+                            text.Parent = esp
+
+                            table.insert(espInstances, esp)
+                        else
+                            local esp = player.Character:FindFirstChild("PlayerESP")
+                            esp.TextLabel.Text = player.Name .. " (" .. math.floor((player.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude) .. " studs)"
                         end
                     end
                 end
-                teleportTo(CFrame.new(-16550, 55, 2300))
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("BuyItem", "Shark Anchor")
-                wait(5)
-            end
-        end)
-    end
-end)
-
-WeaponSection:NewToggle("Auto Guitar", "Tự động lấy Guitar", function(state)
-    toggles.AutoGuitar = state
-    playClickSound()
-    if state then
-        spawn(function()
-            while toggles.AutoGuitar and LocalPlayer.Character do
-                if game.PlaceId == 7449423635 and isFullMoon() then
-                    for _, island in pairs(Workspace:GetChildren()) do
-                        if island.Name == "Mirage Island" then
-                            if island:FindFirstChild("HighestPoint") then
-                                teleportTo(island.HighestPoint.CFrame)
-                                for _, part in pairs(island:GetChildren()) do
-                                    if part.Name == "HighestPoint" and part:FindFirstChild("ClickDetector") then
-                                        fireclickdetector(part.ClickDetector)
-                                    end
-                                end
-                            end
-                            for _, gear in pairs(island:GetChildren()) do
-                                if gear.Name == "Blue Gear" then
-                                    teleportTo(gear.CFrame)
-                                    if gear:FindFirstChild("ClickDetector") then
-                                        fireclickdetector(gear.ClickDetector)
-                                    end
-                                    break
-                                end
-                            end
-                            teleportTo(CFrame.new(-5075, 315, -3150))
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer("Awakener", "PullLever")
-                            ReplicatedStorage.Remotes.CommF_:InvokeServer("BuyItem", "Electric Guitar")
-                            wait(5)
-                            break
-                        end
-                    end
-                    Library:Notify("Không tìm thấy Mirage Island, đang tìm lại...", 3)
-                else
-                    Library:Notify("Cần Full Moon và ở Sea 3 để lấy Guitar!", 3)
-                end
-                wait(10)
-            end
-        end)
-    end
-end)
-
-WeaponSection:NewToggle("Auto Dragon Belt", "Tự động lấy Dragon Belt", function(state)
-    toggles.AutoDragonBelt = state
-    playClickSound()
-    if state then
-        spawn(function()
-            while toggles.AutoDragonBelt and LocalPlayer.Character do
-                -- Dịch chuyển đến Hydra Island để farm Dragon Scales
-                teleportTo(CFrame.new(5750, 610, -280))
-                local scaleCount = 0
-                while scaleCount < 10 and toggles.AutoDragonBelt do
-                    if next(Workspace.Enemies:GetChildren()) then
-                        for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
-                            if (enemy.Name == "Dragon Crew Warrior" or enemy.Name == "Dragon Crew Archer") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                                teleportTo(enemy.HumanoidRootPart.CFrame)
-                                wait(attackSpeed)
-                                scaleCount = scaleCount + 1 -- Giả định mỗi lần giết được 1 Dragon Scale
-                            end
-                        end
-                    end
-                    wait(1)
-                end
-                -- Dịch chuyển đến Tiki Outpost để mua Dragon Belt
-                teleportTo(CFrame.new(-16250, 100, 1000))
-                ReplicatedStorage.Remotes.CommF_:InvokeServer("BuyItem", "Dragon Belt")
-                wait(5)
-            end
-        end)
-    end
-end)
-
--- 7️⃣ Tab ESP
-local ESPTab = Window:NewTab("ESP")
-local ESPSection = ESPTab:NewSection("ESP Features")
-ESPSection:NewToggle("ESP", "Hiển thị mục tiêu", function(state)
-    toggles.ESP = state
-    playClickSound()
-    if state then
-        spawn(function()
-            while toggles.ESP and LocalPlayer.Character do
-                for _, obj in pairs(Workspace:GetChildren()) do
-                    if (obj:FindFirstChild("Humanoid") or obj.Name:match("Chest") or obj:IsA("Tool")) and not obj:FindFirstChild("BillboardGui") then
-                        local esp = Instance.new("BillboardGui", obj)
-                        esp.Size = UDim2.new(0, 100, 0, 50)
-                        esp.StudsOffset = Vector3.new(0, 3, 0)
-                        local text = Instance.new("TextLabel", esp)
-                        text.Size = UDim2.new(1, 0, 1, 0)
-                        text.Text = obj.Name
-                        text.BackgroundTransparency = 1
-                        text.TextColor3 = Color3.fromRGB(255, 0, 0)
-                        table.insert(espInstances, esp)
-                    end
-                end
-                wait(5)
+                wait(1)
             end
         end)
     else
         clearESP()
     end
-end)
+end
 
--- Thông báo khi chạy
-Library:Notify("MoonCat Hub (Kavo UI - BlurEffect) đã chạy!", 5)
+-- Hàm Fruit ESP
+local function fruitESP(state)
+    toggles.FruitESP = state
+    if state then
+        spawn(function()
+            while toggles.FruitESP and toggles.MasterSwitch do
+                for _, fruit in pairs(Workspace:GetChildren()) do
+                    if fruit.Name:match("Fruit") and fruit:IsA("BasePart") then
+                        if not fruit:FindFirstChild("FruitESP") then
+                            local esp = Instance.new("BillboardGui")
+                            esp.Name = "FruitESP"
+                            esp.Size = UDim2.new(0, 100, 0, 50)
+                            esp.StudsOffset = Vector3.new(0, 3, 0)
+                            esp.Adornee = fruit
+                            esp.Parent = fruit
+
+                            local text = Instance.new("TextLabel")
+                            text.Size = UDim2.new(1, 0, 1, 0)
+                            text.BackgroundTransparency = 1
+                            text.TextColor3 = Color3.fromRGB(255, 0, 0)
+                            text.TextSize = 14
+                            text.Font = Enum.Font.Gotham
+                            text.Text = fruit.Name
+                            text.Parent = esp
+
+                            table.insert(espInstances, esp)
+                        end
+                    end
+                end
+                wait(1)
+            end
+        end)
+    else
+        clearESP()
+    end
+end
+
+-- Hàm Chest ESP
+local function chestESP(state)
+    toggles.ChestESP = state
+    if state then
+        spawn(function()
+            while toggles.ChestESP and toggles.MasterSwitch do
+                for _, chest in pairs(Workspace:GetChildren()) do
+                    if chest.Name:match("Chest") and chest:IsA("BasePart") then
+                        if not chest:FindFirstChild("ChestESP") then
+                            local esp = Instance.new("BillboardGui")
+                            esp.Name = "ChestESP"
+                            esp.Size = UDim2.new(0, 100, 0, 50)
+                            esp.StudsOffset = Vector3.new(0, 3, 0)
+                            esp.Adornee = chest
+                            esp.Parent = chest
+
+                            local text = Instance.new("TextLabel")
+                            text.Size = UDim2.new(1, 0, 1, 0)
+                            text.BackgroundTransparency = 1
+                            text.TextColor3 = Color3.fromRGB(255, 215, 0)
+                            text.TextSize = 14
+                            text.Font = Enum.Font.Gotham
+                            text.Text = "Chest"
+                            text.Parent = esp
+
+                            table.insert(espInstances, esp)
+                        end
+                    end
+                end
+                wait(1)
+            end
+        end)
+    else
+        clearESP()
+    end
+end
+
+-- Hàm Enemy ESP
+local function enemyESP(state)
+    toggles.EnemyESP = state
+    if state then
+        spawn(function()
+            while toggles.EnemyESP and toggles.MasterSwitch do
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        if not enemy:FindFirstChild("EnemyESP") then
+                            local esp = Instance.new("BillboardGui")
+                            esp.Name = "EnemyESP"
+                            esp.Size = UDim2.new(0, 100, 0, 50)
+                            esp.StudsOffset = Vector3.new(0, 3, 0)
+                            esp.Adornee = enemy.HumanoidRootPart
+                            esp.Parent = enemy
+
+                            local text = Instance.new("TextLabel")
+                            text.Size = UDim2.new(1, 0, 1, 0)
+                            text.BackgroundTransparency = 1
+                            text.TextColor3 = Color3.fromRGB(255, 0, 0)
+                            text.TextSize = 14
+                            text.Font = Enum.Font.Gotham
+                            text.Text = enemy.Name
+                            text.Parent = esp
+
+                            table.insert(espInstances, esp)
+                        end
+                    end
+                end
+                wait(1)
+            end
+        end)
+    else
+        clearESP()
+    end
+end
+
+-- Hàm Boss ESP
+local function bossESP(state)
+    toggles.BossESP = state
+    if state then
+        spawn(function()
+            while toggles.BossESP and toggles.MasterSwitch do
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        for _, boss in pairs(bossData) do
+                            if enemy.Name == boss.Name then
+                                if not enemy:FindFirstChild("BossESP") then
+                                    local esp = Instance.new("BillboardGui")
+                                    esp.Name = "BossESP"
+                                    esp.Size = UDim2.new(0, 100, 0, 50)
+                                    esp.StudsOffset = Vector3.new(0, 3, 0)
+                                    esp.Adornee = enemy.HumanoidRootPart
+                                    esp.Parent = enemy
+
+                                    local text = Instance.new("TextLabel")
+                                    text.Size = UDim2.new(1, 0, 1, 0)
+                                    text.BackgroundTransparency = 1
+                                    text.TextColor3 = Color3.fromRGB(255, 0, 255)
+                                    text.TextSize = 14
+                                    text.Font = Enum.Font.Gotham
+                                    text.Text = enemy.Name
+                                    text.Parent = esp
+
+                                    table.insert(espInstances, esp)
+                                end
+                            end
+                        end
+                    end
+                end
+                wait(1)
+            end
+        end)
+    else
+        clearESP()
+    end
+end
+
+-- Hàm Material ESP
+local function materialESP(state)
+    toggles.MaterialESP = state
+    if state then
+        spawn(function()
+            while toggles.MaterialESP and toggles.MasterSwitch do
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        for _, material in pairs(materialData) do
+                            if enemy.Name == material.Mob then
+                                if not enemy:FindFirstChild("MaterialESP") then
+                                    local esp = Instance.new("BillboardGui")
+                                    esp.Name = "MaterialESP"
+                                    esp.Size = UDim2.new(0, 100, 0, 50)
+                                    esp.StudsOffset = Vector3.new(0, 3, 0)
+                                    esp.Adornee = enemy.HumanoidRootPart
+                                    esp.Parent = enemy
+
+                                    local text = Instance.new("TextLabel")
+                                    text.Size = UDim2.new(1, 0, 1, 0)
+                                    text.BackgroundTransparency = 1
+                                    text.TextColor3 = Color3.fromRGB(0, 191, 255)
+                                    text.TextSize = 14
+                                    text.Font = Enum.Font.Gotham
+                                    text.Text = material.Name
+                                    text.Parent = esp
+
+                                    table.insert(espInstances, esp)
+                                end
+                            end
+                        end
+                    end
+                end
+                wait(1)
+            end
+        end)
+    else
+        clearESP()
+    end
+end
+
+-- Hàm Sea Beast ESP
+local function seaBeastESP(state)
+    toggles.SeaBeastESP = state
+    if state then
+        spawn(function()
+            while toggles.SeaBeastESP and toggles.MasterSwitch do
+                for _, seaBeast in pairs(Workspace.SeaBeasts:GetChildren()) do
+                    if seaBeast:FindFirstChild("Humanoid") and seaBeast.Humanoid.Health > 0 then
+                        if not seaBeast:FindFirstChild("SeaBeastESP") then
+                            local esp = Instance.new("BillboardGui")
+                            esp.Name = "SeaBeastESP"
+                            esp.Size = UDim2.new(0, 100, 0, 50)
+                            esp.StudsOffset = Vector3.new(0, 3, 0)
+                            esp.Adornee = seaBeast.HumanoidRootPart
+                            esp.Parent = seaBeast
+
+                            local text = Instance.new("TextLabel")
+                            text.Size = UDim2.new(1, 0, 1, 0)
+                            text.BackgroundTransparency = 1
+                            text.TextColor3 = Color3.fromRGB(0, 0, 255)
+                            text.TextSize = 14
+                            text.Font = Enum.Font.Gotham
+                            text.Text = seaBeast.Name
+                            text.Parent = esp
+
+                            table.insert(espInstances, esp)
+                        end
+                    end
+                end
+                wait(1)
+            end
+        end)
+    else
+        clearESP()
+    end
+end
+
+-- Hàm Anti AFK
+local function antiAFK(state)
+    toggles.AntiAFK = state
+    if state then
+        spawn(function()
+            while toggles.AntiAFK and toggles.MasterSwitch do
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton2(Vector2.new())
+                wait(60)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Dragon Race
+local function autoGetDragonRace(state)
+    toggles.AutoGetDragonRace = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetDragonRace and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(0, 100, 0)) -- Vị trí NPC (giả định)
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("RaceV4", "Start")
+                wait(5)
+                for _, gear in pairs(Workspace:GetChildren()) do
+                    if gear.Name == "Gear" then
+                        teleportTo(gear.CFrame)
+                        wait(2)
+                    end
+                end
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Upgrade Race
+local function autoUpgradeRace(state)
+    toggles.AutoUpgradeRace = state
+    if state then
+        spawn(function()
+            while toggles.AutoUpgradeRace and toggles.MasterSwitch and LocalPlayer.Character do
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("UpgradeRace", "Start")
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Dragon Trident
+local function autoGetDragonTrident(state)
+    toggles.AutoGetDragonTrident = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetDragonTrident and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(6339, 52, -1213)) -- Vị trí Dragon Crew Warrior
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Dragon Crew Warrior" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Dragon Talon
+local function autoGetDragonTalon(state)
+    toggles.AutoGetDragonTalon = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetDragonTalon and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-5428, 16, -5299)) -- Vị trí Magma Ninja
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Magma Ninja" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Tushita
+local function autoGetTushita(state)
+    toggles.AutoGetTushita = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetTushita and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(5448, 602, 751)) -- Vị trí Great Tree
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Female Islander" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Yama
+local function autoGetYama(state)
+    toggles.AutoGetYama = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetYama and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-13234, 332, -7627)) -- Vị trí Forest Pirate
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Forest Pirate" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Shark Anchor
+local function autoGetSharkAnchor(state)
+    toggles.AutoGetSharkAnchor = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetSharkAnchor and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-3054, 29, -9756)) -- Vị trí Tide Keeper
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Tide Keeper" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Cursed Dual Katana
+local function autoGetCursedDualKatana(state)
+    toggles.AutoGetCursedDualKatana = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetCursedDualKatana and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-9516, 172, 6078)) -- Vị trí Soul Reaper
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Soul Reaper" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Dark Blade
+local function autoGetDarkBlade(state)
+    toggles.AutoGetDarkBlade = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetDarkBlade and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-4842, 717, -2623)) -- Vị trí Dark Master
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Dark Master" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Hallow Scythe
+local function autoGetHallowScythe(state)
+    toggles.AutoGetHallowScythe = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetHallowScythe and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-9516, 172, 6078)) -- Vị trí Soul Reaper
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Soul Reaper" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Fox Lamp
+local function autoGetFoxLamp(state)
+    toggles.AutoGetFoxLamp = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetFoxLamp and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-9500, 100, 5000)) -- Vị trí Kitsune Shrine
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("KitsuneEvent", "Check")
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Buddy Sword
+local function autoGetBuddySword(state)
+    toggles.AutoGetBuddySword = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetBuddySword and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(970, 142, 1237)) -- Vị trí Swan Pirate
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Swan Pirate" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Teleport to Sea Beast
+local function autoTeleportSeaBeast(state)
+    toggles.AutoTeleportSeaBeast = state
+    if state then
+        spawn(function()
+            while toggles.AutoTeleportSeaBeast and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, seaBeast in pairs(Workspace.SeaBeasts:GetChildren()) do
+                    if seaBeast:FindFirstChild("Humanoid") and seaBeast.Humanoid.Health > 0 then
+                        teleportTo(seaBeast.HumanoidRootPart.CFrame * CFrame.new(0, 50, 0))
+                        wait(5)
+                    end
+                end
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Teleport to Mirage Island
+local function autoTeleportMirageIsland(state)
+    toggles.AutoTeleportMirageIsland = state
+    if state then
+        spawn(function()
+            while toggles.AutoTeleportMirageIsland and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, island in pairs(Workspace:GetChildren()) do
+                    if island.Name == "Mirage Island" then
+                        teleportTo(island:GetModelCFrame())
+                        wait(5)
+                    end
+                end
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Teleport to Gear
+local function autoTeleportGear(state)
+    toggles.AutoTeleportGear = state
+    if state then
+        spawn(function()
+            while toggles.AutoTeleportGear and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, gear in pairs(Workspace:GetChildren()) do
+                    if gear.Name == "Gear" then
+                        teleportTo(gear.CFrame)
+                        wait(5)
+                    end
+                end
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Teleport to Temple of Time
+local function autoTeleportTempleOfTime(state)
+    toggles.AutoTeleportTempleOfTime = state
+    if state then
+        spawn(function()
+            while toggles.AutoTeleportTempleOfTime and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(28734, 14888, 135)) -- Vị trí Temple of Time
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Dragon Breath
+local function autoGetDragonBreath(state)
+    toggles.AutoGetDragonBreath = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetDragonBreath and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-5428, 16, -5299)) -- Vị trí Magma Ninja
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Magma Ninja" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Use Dragon Skills
+local function autoUseDragonSkills(state)
+    toggles.AutoUseDragonSkills = state
+    if state then
+        spawn(function()
+            while toggles.AutoUseDragonSkills and toggles.MasterSwitch and LocalPlayer.Character do
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        local distance = (enemy.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                        if distance < 15 then
+                            VirtualUser:Button1Down(Vector2.new(0, 0), game:GetService("UserInputService"):GetMouseLocation())
+                            wait(0.1)
+                            VirtualUser:Button1Up(Vector2.new(0, 0), game:GetService("UserInputService"):GetMouseLocation())
+                        end
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Electric Claw
+local function autoGetElectricClaw(state)
+    toggles.AutoGetElectricClaw = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetElectricClaw and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-10371, 332, -10131)) -- Vị trí NPC Electric Claw
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("BuyElectricClaw")
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Sharkman Karate
+local function autoGetSharkmanKarate(state)
+    toggles.AutoGetSharkmanKarate = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetSharkmanKarate and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-3054, 29, -9756)) -- Vị trí Tide Keeper
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Tide Keeper" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Death Step
+local function autoGetDeathStep(state)
+    toggles.AutoGetDeathStep = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetDeathStep and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-9516, 172, 6078)) -- Vị trí Soul Reaper
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name == "Soul Reaper" and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(1)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Superhuman
+local function autoGetSuperhuman(state)
+    toggles.AutoGetSuperhuman = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetSuperhuman and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-10371, 332, -10131)) -- Vị trí NPC Superhuman
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("BuySuperhuman")
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get Godhuman
+local function autoGetGodhuman(state)
+    toggles.AutoGetGodhuman = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetGodhuman and toggles.MasterSwitch and LocalPlayer.Character do
+                teleportTo(CFrame.new(-10371, 332, -10131)) -- Vị trí NPC Godhuman
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("BuyGodhuman")
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get All Accessories
+local function autoGetAllAccessories(state)
+    toggles.AutoGetAllAccessories = state
+    if state then
+        spawn(function()
+            while toggles.AutoGetAllAccessories and toggles.MasterSwitch and LocalPlayer.Character do
+                ReplicatedStorage.Remotes.CommF_:InvokeServer("EliteHunter")
+                wait(5)
+                for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
+                    if enemy.Name:match("Elite") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
+                        teleportTo(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0))
+                        wait(attackSpeed)
+                    end
+                end
+                wait(5)
+            end
+        end)
+    end
+end
+
+-- Hàm Auto Get All Fruits
+local function autoGetAllFruits(state)
+    toggles.AutoGetAllFruits = state
+    if state then
+        spawn(function
